@@ -16,7 +16,7 @@ public class HoroscopeBot extends TelegramLongPollingBot {
     private final String BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";
 
     // Укажите здесь имя вашего бота
-    private final String BOT_USERNAME = "YOUR_BOT_USERNAME_HERE";
+    private final String BOT_USERNAME = "Star Watcher";
 
     // URL API гороскопов (примерный)
     private final String HOROSCOPE_API_URL = "https://example.com/api/horoscope?sign=";
