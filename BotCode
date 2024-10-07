@@ -1,0 +1,92 @@
+import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.TelegramBotsApi;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.URI;
+import org.json.JSONObject;
+
+public class HoroscopeBot extends TelegramLongPollingBot {
+
+    // Укажите здесь токен вашего бота
+    private final String BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";
+
+    // Укажите здесь имя вашего бота
+    private final String BOT_USERNAME = "YOUR_BOT_USERNAME_HERE";
+
+    // URL API гороскопов (примерный)
+    private final String HOROSCOPE_API_URL = "https://example.com/api/horoscope?sign=";
+
+    // Обработка сообщений
+    @Override
+    public void onUpdateReceived(Update update) {
+        if (update.hasMessage() && update.getMessage().hasText()) {
+            String messageText = update.getMessage().getText();
+            String chatId = update.getMessage().getChatId().toString();
+
+            // Например, пользователи могут отправить знак зодиака
+            String sign = messageText.trim().toLowerCase();
+
+            // Получить гороскоп по знаку зодиака
+            String horoscope = getHoroscopeForSign(sign);
+
+            // Отправить ответ пользователю
+            SendMessage message = new SendMessage();
+            message.setChatId(chatId);
+            message.setText(horoscope);
+
+            try {
+                execute(message); // Отправить сообщение
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // Метод для получения гороскопа по знаку зодиака
+    private String getHoroscopeForSign(String sign) {
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(HOROSCOPE_API_URL + sign))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            // Парсим ответ (предполагаем, что API возвращает JSON)
+            JSONObject jsonObject = new JSONObject(response.body());
+
+            // Предположим, что в API есть поле "horoscope" для самого гороскопа
+            return jsonObject.getString("horoscope");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Не удалось получить гороскоп. Попробуйте позже.";
+        }
+    }
+
+    // Имя пользователя бота
+    @Override
+    public String getBotUsername() {
+        return BOT_USERNAME;
+    }
+
+    // Токен бота
+    @Override
+    public String getBotToken() {
+        return BOT_TOKEN;
+    }
+
+    public static void main(String[] args) {
+        try {
+            TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
+            botsApi.registerBot(new HoroscopeBot());
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+}
