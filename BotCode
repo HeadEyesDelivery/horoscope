@@ -9,17 +9,19 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.URI;
 import org.json.JSONObject;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HoroscopeBot extends TelegramLongPollingBot {
 
-    // Укажите здесь токен вашего бота
     private final String BOT_TOKEN = "YOUR_BOT_TOKEN_HERE";
-
-    // Укажите здесь имя вашего бота
-    private final String BOT_USERNAME = "Star Watcher";
-
-    // URL API гороскопов (примерный)
+    private final String BOT_USERNAME = "YOUR_BOT_USERNAME_HERE";
     private final String HOROSCOPE_API_URL = "https://example.com/api/horoscope?sign=";
+
+    // Карта для хранения даты рождения пользователей (chatId -> дата рождения)
+    private Map<String, LocalDate> userBirthdays = new HashMap<>();
 
     // Обработка сообщений
     @Override
@@ -28,22 +30,66 @@ public class HoroscopeBot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             String chatId = update.getMessage().getChatId().toString();
 
-            // Например, пользователи могут отправить знак зодиака
-            String sign = messageText.trim().toLowerCase();
+            // Проверка, зарегистрирован ли пользователь (ввел ли дату рождения)
+            if (!userBirthdays.containsKey(chatId)) {
+                handleBirthdayInput(chatId, messageText);
+            } else {
+                String sign = getZodiacSign(userBirthdays.get(chatId));
+                String horoscope = getHoroscopeForSign(sign);
+                sendMessage(chatId, "Ваш знак зодиака: " + sign + ".\nВаш гороскоп: " + horoscope);
+            }
+        }
+    }
 
-            // Получить гороскоп по знаку зодиака
+    // Метод для обработки ввода даты рождения
+    private void handleBirthdayInput(String chatId, String messageText) {
+        try {
+            // Ожидаем дату в формате "дд-ММ-гггг"
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+            LocalDate birthDate = LocalDate.parse(messageText, formatter);
+
+            // Сохраняем дату рождения
+            userBirthdays.put(chatId, birthDate);
+
+            String sign = getZodiacSign(birthDate);
             String horoscope = getHoroscopeForSign(sign);
 
-            // Отправить ответ пользователю
-            SendMessage message = new SendMessage();
-            message.setChatId(chatId);
-            message.setText(horoscope);
+            sendMessage(chatId, "Ваш знак зодиака: " + sign + ".\nВаш гороскоп: " + horoscope);
+        } catch (Exception e) {
+            sendMessage(chatId, "Пожалуйста, введите дату рождения в формате ДД-ММ-ГГГГ (например, 25-12-1990).");
+        }
+    }
 
-            try {
-                execute(message); // Отправить сообщение
-            } catch (TelegramApiException e) {
-                e.printStackTrace();
-            }
+    // Метод для определения знака зодиака по дате рождения
+    private String getZodiacSign(LocalDate birthDate) {
+        int day = birthDate.getDayOfMonth();
+        int month = birthDate.getMonthValue();
+
+        // Логика для определения знака зодиака
+        if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) {
+            return "aquarius";  // Водолей
+        } else if ((month == 2 && day >= 19) || (month == 3 && day <= 20)) {
+            return "pisces";  // Рыбы
+        } else if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) {
+            return "aries";  // Овен
+        } else if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) {
+            return "taurus";  // Телец
+        } else if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) {
+            return "gemini";  // Близнецы
+        } else if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) {
+            return "cancer";  // Рак
+        } else if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) {
+            return "leo";  // Лев
+        } else if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) {
+            return "virgo";  // Дева
+        } else if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) {
+            return "libra";  // Весы
+        } else if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) {
+            return "scorpio";  // Скорпион
+        } else if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) {
+            return "sagittarius";  // Стрелец
+        } else {
+            return "capricorn";  // Козерог
         }
     }
 
@@ -57,15 +103,24 @@ public class HoroscopeBot extends TelegramLongPollingBot {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            // Парсим ответ (предполагаем, что API возвращает JSON)
             JSONObject jsonObject = new JSONObject(response.body());
-
-            // Предположим, что в API есть поле "horoscope" для самого гороскопа
             return jsonObject.getString("horoscope");
 
         } catch (Exception e) {
             e.printStackTrace();
             return "Не удалось получить гороскоп. Попробуйте позже.";
+        }
+    }
+
+    // Метод для отправки сообщений
+    private void sendMessage(String chatId, String text) {
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText(text);
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
         }
     }
 
