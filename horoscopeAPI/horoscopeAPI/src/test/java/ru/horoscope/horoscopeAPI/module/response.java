@@ -2,22 +2,22 @@ package test.java.ru.horoscope.horoscopeAPI.module;
 
 public class response {
     private String sign;
-    private string text;
-    private string date;
-    private string type;
+    private String text;
+    private String date;
+    private String type;
 
-    public response (String sign, string text, string date, string type) {
+    public response (String sign, String text, String date, String type) {
         this.sign = sign;
         this.text = text;
         this.date = date;
         this.type = type;
     }
 
-    public string getText() {
+    public String getText() {
         return text;
     }
 
-    public void setText(string text) {
+    public void setText(String text) {
         this.text = text;
     }
 
@@ -29,19 +29,19 @@ public class response {
         this.sign = sign;
     }
 
-    public string getDate() {
+    public String getDate() {
         return date;
     }
 
-    public void setDate(string date) {
+    public void setDate(String date) {
         this.date = date;
     }
 
-    public string getType() {
+    public String getType() {
         return type;
     }
 
-    public void setType(string type) {
+    public void setType(String type) {
         this.type = type;
     }
 
